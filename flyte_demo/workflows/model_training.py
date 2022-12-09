@@ -22,6 +22,7 @@ from sklearn.model_selection import train_test_split
 from dataclasses_json import dataclass_json
 from flytekit import task, workflow, kwtypes, Resources, LaunchPlan, CronSchedule
 from flytekit.types.structured.structured_dataset import StructuredDataset
+from flytekitplugins.deck import FrameProfilingRenderer
 
 
 TARGET = "species"
@@ -54,8 +55,8 @@ PenquinsDataset = Annotated[
 ]
 
 
-@task
-def get_data() -> pd.DataFrame:
+@task(disable_deck=False)
+def get_data() -> Annotated[pd.DataFrame, FrameProfilingRenderer("penguins")]:
     return load_penguins()[[TARGET] + FEATURES].dropna()
 
 

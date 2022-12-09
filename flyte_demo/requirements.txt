@@ -9,6 +9,7 @@ joblib
 modin
 palmerpenguins
 pandas
+pandas-gbq
 pyspark
 scikit-learn
 torch

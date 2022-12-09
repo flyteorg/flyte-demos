@@ -75,8 +75,12 @@ flytectl update task-resource-attribute --attrFile cra.yaml
 
 ```bash
 export VERSION=$(git rev-parse HEAD)
-./docker_build_and_tag.sh -a flyte-demo -r ghcr.io/org -v $VERSION
+
+./docker_build_and_tag.sh -a flyte-demo -r ghcr.io/flyteorg -v $VERSION
 docker push ghcr.io/flyteorg/flyte-demo:$VERSION
+
+./docker_build_and_tag.sh -a flyte-demo -r ghcr.io/flyteorg -v latest
+docker push ghcr.io/flyteorg/flyte-demo:latest
 ```
 
 ## Registering
@@ -84,21 +88,13 @@ docker push ghcr.io/flyteorg/flyte-demo:$VERSION
 Package the workflows
 
 ```bash
-pyflyte --pkgs workflows \
-   package \
-   --force \
-   --image ghcr.io/flyteorg/flyte-demo:$(git rev-parse HEAD)
+pyflyte --pkgs workflows package --force --image ghcr.io/flyteorg/flyte-demo:latest
 ```
 
 Register to Backend
 
 ```bash
-flytectl register files \
-   --project flyte-demo \
-   --domain development \
-   --archive flyte-package.tgz \
-   --force
-   --version $(git rev-parse HEAD)
+flytectl register files --project flyte-demo --domain development --archive flyte-package.tgz --version $VERSION
 ```
 
 ## Running Workflows

@@ -2,126 +2,68 @@
 
 A template for the recommended layout of a Flyte enabled repository for code written in python using [flytekit](https://docs.flyte.org/projects/flytekit/en/latest/).
 
-## Usage
+## Setup
 
-To get up and running with your Flyte project, we recommend following the
-[Flyte getting started guide](https://docs.flyte.org/en/latest/getting_started.html).
+First, install [flytectl](https://docs.flyte.org/projects/flytectl/en/latest/#installation).
 
-
-## Note
-
-1. This APP name is also added to ``docker_build_and_tag.sh`` - ``APP_NAME``
-2. We recommend using a git repository and this the ``docker_build_and_tag.sh``
-   to build your docker images
-3. We also recommend using pip-compile to build your requirements.
-
-
-## Environment Variables
-
-If you're working on a local sandbox:
-
-```bash
-export FLYTE_CONFIG=~/.flyte/config-sandbox.yaml
-```
-
-If you're working on a remote cluster, e.g. https://playground.hosted.unionai.cloud
-
-```bash
-export FLYTE_CONFIG=~/.flyte/unionplayground-config.yaml
-```
-
-Where the contents of `unionplayground-config.yaml` are:
-
-```yaml
-admin:
-  # For GRPC endpoints you might want to use dns:///flyte.myexample.com
-  endpoint: dns:///playground.hosted.unionai.cloud
-  authType: Pkce
-  # Change insecure flag to ensure that you use the right setting for your environment
-  insecure: false
-storage:
-  type: stow
-  stow:
-    kind: s3
-    config:
-      auth_type: iam
-      region: us-east-2
-logger:
-  # Logger settings to control logger output. Useful to debug logger:
-  show-source: true
-  level: 1
-```
-
-
-## Create Project
-
-```bash
-flytectl create project \
-   --name flyte-demo \
-   --id flyte-demo \
-   --description "flyte-demo" \
-   --config ~/.flyte/unionplayground-config.yaml \
-   --project flyte-demo
-```
-
-Update resource attributes:
+Then start a local Flyte cluster:
 
 ```
-flytectl update task-resource-attribute --attrFile cra.yaml
+flytectl demo start --source .
 ```
 
+This repo ships with pre-built docker images, which can be found
+[here](https://github.com/flyteorg/flyte-demos/pkgs/container/flyte-demo).
 
-## Building Image
+**[Optional]** However, if you wish to build the image inside the local Flyte
+cluster, you can do so with the following command:
 
-```bash
-export VERSION=$(git rev-parse HEAD)
-
-./docker_build_and_tag.sh -a flyte-demo -r ghcr.io/flyteorg -v $VERSION
-docker push ghcr.io/flyteorg/flyte-demo:$VERSION
-
-./docker_build_and_tag.sh -a flyte-demo -r ghcr.io/flyteorg -v latest
-docker push ghcr.io/flyteorg/flyte-demo:latest
 ```
+flytectl demo exec -- docker build . --tag "flyte-demo:v1"
+```
+
+## Project Structure
+
+This repo contains a `workflows` folder, which contains the following workflow
+modules:
+
+- `model_training.py`: a simple model training example
+- `optimizations.py`: examples of how to optimize your training code with caching,
+  retries, resource requests, and intratask checkpointing.
+- `data_iter.py`: an example of a custom parquet encode/decoder for loading
+  chunks of data into a Flyte etask.
+- `bigquery.py`: using `flytekitplugins-bigquery` to read data from a BigQuery DB.
+- `visualizations.py`: examples of Flyte deck extensions for custom visualizations.
 
 ## Registering
 
 Package the workflows
 
 ```bash
-pyflyte --pkgs workflows package --force --image ghcr.io/flyteorg/flyte-demo:latest
+pyflyte --pkgs workflows package --force --image ghcr.io/flyteorg/flyte-demo:v1
 ```
 
 Register to Backend
 
 ```bash
-flytectl register files --project flyte-demo --domain development --archive flyte-package.tgz --version $VERSION
+flytectl register files --project flytesnacks --domain development --archive flyte-package.tgz --version v1
 ```
 
 ## Running Workflows
 
 ```bash
-pyflyte -c $FLYTE_CONFIG run \
+pyflyte run \
    --remote \
-   --image ghcr.io/flyteorg/flyte-demo:latest \
+   --image flyte-demo:v1 \
    workflows/model_training.py training_workflow \
    --n_epochs 20 \
    --hyperparameters '{"in_dim": 4, "hidden_dim": 100, "out_dim": 3, "learning_rate": 0.03}'
 ```
 
+To run these workflows on a remote Flyte cluster, follow the **Remote Flyte Cluster**
+instructions in [these guides](https://docs.flyte.org/projects/cookbook/en/latest/auto/larger_apps/index.html).
 
-## Outline
+## Notebook Demo
 
-🚧 NOTE: This demo is still under construction 🚧
-
-This demo covers the following topics
-
-1. Creating tasks and workflows basics
-1. The Iteration Cycle: Local to remote execution
-1. Scheduling workflows
-1. Caching
-1. Plugins: BigQuery
-1. Custom Types: Dataclasses and Type Extensions
-1. Custom Tasks: Datastore
-1. Streaming/chunking large data structures
-1. CI/CD Testing
-1. Gitops Workflow Deployment
+You can also follow the `demo.ipynb` notebook to run workflows and interact
+with a Flyte cluster from a Jupyter notebook runtime.

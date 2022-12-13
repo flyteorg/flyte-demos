@@ -12,14 +12,45 @@ Then start a local Flyte cluster:
 flytectl demo start --source .
 ```
 
+Expected output:
+
+```
+👨‍💻 Flyte is ready! Flyte UI is available at http://localhost:30080/console 🚀 🚀 🎉
+...
+```
+
+Make sure to export the `KUBECONFIG` environment variable that's output after
+the previous command has completed.
+
+**Important**: Set `FLYTECTL_CONFIG` to `./config-sandbox.yaml`.
+
+```
+export FLYTECTL_CONFIG=./config-sandbox.yaml
+```
+
+Update the default resources available to tasks in your local cluster:
+
+```
+flytectl update task-resource-attribute --attrFile cra.yaml
+```
+
+## Setting a Docker Image
+
 This repo ships with pre-built docker images, which can be found
 [here](https://github.com/flyteorg/flyte-demos/pkgs/container/flyte-demo).
 
-**[Optional]** However, if you wish to build the image inside the local Flyte
-cluster, you can do so with the following command:
+Use this image for the rest of this README guide.
+
+```
+export IMAGE=ghcr.io/flyteorg/flyte-demo:latest
+```
+
+**[Optional]** Alternatively, if you want to build the image inside the local
+Flyte cluster, you can do so with the following command:
 
 ```
 flytectl demo exec -- docker build . --tag "flyte-demo:v1"
+export IMAGE=flyte-demo:v1
 ```
 
 ## Project Structure
@@ -40,7 +71,7 @@ modules:
 Package the workflows
 
 ```bash
-pyflyte --pkgs workflows package --force --image ghcr.io/flyteorg/flyte-demo:v1
+pyflyte --pkgs workflows package --force --image $IMAGE
 ```
 
 Register to Backend
@@ -54,7 +85,7 @@ flytectl register files --project flytesnacks --domain development --archive fly
 ```bash
 pyflyte run \
    --remote \
-   --image flyte-demo:v1 \
+   --image $IMAGE \
    workflows/model_training.py training_workflow \
    --n_epochs 20 \
    --hyperparameters '{"in_dim": 4, "hidden_dim": 100, "out_dim": 3, "learning_rate": 0.03}'
@@ -65,5 +96,11 @@ instructions in [these guides](https://docs.flyte.org/projects/cookbook/en/lates
 
 ## Notebook Demo
 
-You can also follow the `demo.ipynb` notebook to run workflows and interact
-with a Flyte cluster from a Jupyter notebook runtime.
+Follow the `demo.ipynb` notebook to run workflows and interact with a Flyte
+cluster from a Jupyter notebook runtime.
+
+
+## Script Demo
+
+The `run_model_training.py` script provides an example of how to use the
+`FlyteRemote` object to run workflows from a Python script.
